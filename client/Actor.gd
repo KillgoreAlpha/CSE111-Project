@@ -57,15 +57,17 @@ func update(new_model: Dictionary):
 					label.text = actor_name
 
 
-func _on_detection_area_body_entered(body: Node2D) -> void:
+func _on_detection_area_body_entered(body: CharacterBody2D) -> void:
 	if is_enemy:
-		active_target = body
+		active_target = body.get_parent()
 		target_chase = true
+		_player_target = body.position
 
 
-func _on_detection_area_body_exited(body: Node2D) -> void:
+func _on_detection_area_body_exited(body: CharacterBody2D) -> void:
 	active_target = null
 	target_chase = false
+	_player_target = Vector2.ZERO
 
 
 func _physics_process(delta):    
@@ -73,7 +75,7 @@ func _physics_process(delta):
 	if is_player:
 		target = _player_target
 	elif target_chase and active_target:
-		target = active_target.body.position
+		target = active_target.get_node("CharacterBody2D").position
 	else:
 		target = server_position
 		

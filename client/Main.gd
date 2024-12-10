@@ -179,9 +179,9 @@ func _update_models(model_data: Dictionary):
 		"Quest":
 			_update_quest(model_data["id"], model_data)
 		"FriendlyNPC":
-			_update_friendly_npc(model_data["id"], model_data)
+			_update_friendlynpc(model_data["id"], model_data)
 		"EnemyNPC":
-			_update_enemy_npc(model_data["id"], model_data)
+			_update_enemynpc(model_data["id"], model_data)
 
 
 #func _update_actor(model_id: int, model_data: Dictionary):
@@ -227,7 +227,7 @@ func _update_quest(model_id: int, model_data: Dictionary):
 	_quests[model_id] = model_data
 	_ui.update_quests(_quests)
 
-func _update_friendly_npc(model_id: int, model_data: Dictionary):
+func _update_friendlynpc(model_id: int, model_data: Dictionary):
 	if model_id in _npcs:
 		_npcs[model_id].update(model_data)
 	else:
@@ -235,7 +235,7 @@ func _update_friendly_npc(model_id: int, model_data: Dictionary):
 		_npcs[model_id] = new_npc
 		add_child(new_npc)
 
-func _update_enemy_npc(model_id: int, model_data: Dictionary):
+func _update_enemynpc(model_id: int, model_data: Dictionary):
 	if model_id in _enemies:
 		_enemies[model_id].update(model_data)
 	else:
@@ -288,7 +288,7 @@ func _unhandled_input(event: InputEvent):
 	if event.is_action_released("click"):
 		for character in _characters.values():
 			if character.is_player:
-				var target = character.body.get_global_mouse_position()
+				var target = character.get_node("CharacterBody2D").get_global_mouse_position()
 				character._player_target = target
 				var p: Packet = Packet.new("Target", [target.x, target.y])
 				_network_client.send_packet(p)
