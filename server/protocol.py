@@ -276,30 +276,30 @@ class GameServerProtocol(WebSocketServerProtocol):
 
 
     def tick(self):
-    # Process the next packet in the queue
-    if not self._packet_queue.empty():
-        s, p = self._packet_queue.get()
-        print(f"processing packet {s} {p}")
-        self._state(s, p)
+        # Process the next packet in the queue
+        if not self._packet_queue.empty():
+            s, p = self._packet_queue.get()
+            print(f"processing packet {s} {p}")
+            self._state(s, p)
 
-    # To do when there are no packets to process
-    elif self._state == self.PLAY: 
-        character_dict_before: dict = models.create_dict(self._character)
-        if self._update_position():
-            character_dict_after: dict = models.create_dict(self._character)
-            self.broadcast(packet.ModelDeltaPacket(models.get_delta_dict(character_dict_before, character_dict_after)))
+        # To do when there are no packets to process
+        elif self._state == self.PLAY: 
+            character_dict_before: dict = models.create_dict(self._character)
+            if self._update_position():
+                character_dict_after: dict = models.create_dict(self._character)
+                self.broadcast(packet.ModelDeltaPacket(models.get_delta_dict(character_dict_before, character_dict_after)))
 
-        # Broadcast NPC positions to all players
-        friendly_npcs = models.FriendlyNPC.objects.all()
-        enemy_npcs = models.EnemyNPC.objects.all()
+            # Broadcast NPC positions to all players
+            friendly_npcs = models.FriendlyNPC.objects.all()
+            enemy_npcs = models.EnemyNPC.objects.all()
 
-        for npc in friendly_npcs:
-            npc_data = models.create_dict(npc)
-            self.broadcast(packet.ModelDeltaPacket(npc_data))
+            for npc in friendly_npcs:
+                npc_data = models.create_dict(npc)
+                self.broadcast(packet.ModelDeltaPacket(npc_data))
 
-        for npc in enemy_npcs:
-            npc_data = models.create_dict(npc)
-            self.broadcast(packet.ModelDeltaPacket(npc_data))
+            for npc in enemy_npcs:
+                npc_data = models.create_dict(npc)
+                self.broadcast(packet.ModelDeltaPacket(npc_data))
 
 
     def broadcast(self, p: packet.Packet, exclude_self: bool = False):
