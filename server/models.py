@@ -72,6 +72,7 @@ class Actor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     instanced_entity = models.OneToOneField(InstancedEntity, on_delete=models.CASCADE)
     avatar_id = models.IntegerField(default=0)
+    inventory = models.ManyToManyField('Item', related_name='actors')
 
 class GameUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

@@ -1,8 +1,7 @@
-[gd_scene load_steps=13 format=3 uid="uid://cgv80kk40ps3m"]
+[gd_scene load_steps=12 format=3 uid="uid://cgv80kk40ps3m"]
 
 [ext_resource type="PackedScene" uid="uid://b6mtufhmvgyqo" path="res://Actor.tscn" id="1_base"]
 [ext_resource type="Script" path="res://Character.gd" id="2_script"]
-[ext_resource type="Texture2D" uid="uid://btch3w3yq11gy" path="res://tilemap_packed.png" id="3_y45es"]
 
 [sub_resource type="Animation" id="Animation_ahsd0"]
 length = 0.001
@@ -17,6 +16,23 @@ tracks/0/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_ldol3"]
+resource_name = "walk_down"
+length = 0.3
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [1, 5, 9]
 }
 
 [sub_resource type="Animation" id="Animation_p32un"]
@@ -70,23 +86,6 @@ tracks/0/keys = {
 "values": [2, 6, 10]
 }
 
-[sub_resource type="Animation" id="Animation_ldol3"]
-resource_name = "walk_down"
-length = 0.3
-loop_mode = 1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:frame")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.1, 0.2),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 1,
-"values": [1, 5, 9]
-}
-
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_ubd6p"]
 _data = {
 "RESET": SubResource("Animation_ahsd0"),
@@ -127,7 +126,6 @@ enabled = false
 position_smoothing_enabled = true
 
 [node name="Avatar" parent="CharacterBody2D" index="1"]
-texture = ExtResource("3_y45es")
 hframes = 4
 vframes = 3
 

@@ -9,8 +9,8 @@ func _ready() -> void:
 		
 		
 func _process(delta: float) -> void:
-	if state == "no apples": 
-		$AnimatedSprite2D.play("no apples")
+	if state == "no_apples": 
+		$AnimatedSprite2D.play("no_apples")
 	if state == "apples":
 		$AnimatedSprite2D.play("apples")
 		if player_in_area:
@@ -32,5 +32,5 @@ func _on_pickable_area_body_exited(body: Node2D) -> void:
 
 
 func _on_growth_timer_timeout() -> void:
-	if state == "no apples":
+	if state == "no_apples":
 		state = "apples"

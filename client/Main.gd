@@ -125,6 +125,7 @@ func PLAY(p):
 			var character_id: int = p.payloads[0]
 			var item_id: int = p.payloads[1]
 			var quantity: int = p.payloads[2]
+			_ui.update_inventory(_items)
 			if item_id not in _items:
 				_items[item_id] = quantity
 			else:
@@ -137,6 +138,7 @@ func PLAY(p):
 				_items[item_id] = max(0, _items[item_id] - quantity)
 				if _items[item_id] == 0:
 					_items.erase(item_id)
+			_ui.update_inventory(_items)  # Notify UI
 		"TalkFriendlyNPC":
 			var character_id: int = p.payloads[0]
 			var npc_id: int = p.payloads[1]
@@ -182,6 +184,8 @@ func _update_models(model_data: Dictionary):
 			_update_friendly_npc(model_data["id"], model_data)
 		"EnemyNPC":
 			_update_enemy_npc(model_data["id"], model_data)
+		"Item":
+			_update_item(model_data["id"], model_data)
 
 
 #func _update_actor(model_id: int, model_data: Dictionary):
@@ -242,6 +246,18 @@ func _update_enemy_npc(model_id: int, model_data: Dictionary):
 		var new_enemy = EnemyNPC.instantiate().init(model_data)
 		_enemies[model_id] = new_enemy
 		add_child(new_enemy)
+
+func _update_item(model_id: int, model_data: Dictionary):
+	if model_id in _items:
+		_items[model_id] = model_data
+	else:
+		_items[model_id] = model_data
+
+
+func update_inventory(items: Dictionary):
+	# code to update inventory UI based on `items`
+	pass
+
 
 func _enter_game():
 	state = Callable(self, "PLAY")

@@ -340,3 +340,12 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/normal = SubResource("StyleBoxFlat_button")
 text = "Close"
+
+[node name="Inv_UI" type="Panel" parent="CanvasLayer"]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="GridContainer" type="GridContainer" parent="CanvasLayer/Inv_UI"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

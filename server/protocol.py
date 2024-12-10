@@ -243,6 +243,40 @@ class GameServerProtocol(WebSocketServerProtocol):
                 self.send_client(packet.ModelDeltaPacket(models.create_dict(npc)))
             except models.FriendlyNPC.DoesNotExist:
                 self.send_client(packet.DenyPacket("NPC not found"))
+        elif p.action == packet.Action.GetItem:
+            actor_id, item_id = p.payloads
+            try:
+                item = models.Item.objects.get(id=item_id)  # check if item exists
+                actor = models.Actor.objects.get(id=actor_id)  # check if actor exists
+                actor.inventory.add(item)  # add to inventory
+
+                self.send_client(packet.ModelDeltaPacket({
+                    'type': 'item_granted',
+                    'item': models.create_dict(item)
+                }))  # let the client know
+            except models.Item.DoesNotExist:
+                self.send_client(packet.DenyPacket("Item not found."))
+            except models.Actor.DoesNotExist:
+                self.send_client(packet.DenyPacket("Actor not found."))
+        elif p.action == packet.Action.LoseItem:
+            actor_id, item_id = p.payloads
+            try:
+                item = models.Item.objects.get(id=item_id)  # check if item exists
+                actor = models.Actor.objects.get(id=actor_id)  # check if actor exists
+                if item in actor.inventory.all():
+                    actor.inventory.remove(item)  # Remove from inventory
+                    self.send_client(packet.ModelDeltaPacket({
+                        'type': 'item_removed',
+                        'item': models.create_dict(item)
+                    }))  # notify the client
+                else:
+                    self.send_client(packet.DenyPacket("Item not in inventory."))
+            except models.Item.DoesNotExist:
+                self.send_client(packet.DenyPacket("Item not found."))
+            except models.Actor.DoesNotExist:
+                self.send_client(packet.DenyPacket("Actor not found."))
+
+
 
 
     def _update_position(self) -> bool:
