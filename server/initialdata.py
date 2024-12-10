@@ -61,6 +61,9 @@ player1_entity = Entity.objects.create(name='player1')
 player2_entity = Entity.objects.create(name='player2')
 merchant_entity = Entity.objects.create(name='merchant_npc')
 guard_entity = Entity.objects.create(name='guard_npc')
+wolf_entity = Entity.objects.create(name='wolf_npc')
+wolf_boss_entity = Entity.objects.create(name='wolf_boss_npc')
+shadow_mage_entity = Entity.objects.create(name='shadow_mage_npc')
 
 # Create InstancedEntities
 print("Creating InstancedEntities...")
@@ -77,15 +80,39 @@ player2_instance = InstancedEntity.objects.create(
 )
 
 merchant_instance = InstancedEntity.objects.create(
-    x=100.0,
-    y=200.0,
+    x=310.0,
+    y=-500.0,
     entity=merchant_entity
 )
 
 guard_instance = InstancedEntity.objects.create(
-    x=150.0,
-    y=250.0,
+    x=-410.0,
+    y=-30.0,
     entity=guard_entity
+)
+
+wolf_instance_1 = InstancedEntity.objects.create(
+    x=-1100.0,
+    y=530.0,
+    entity=wolf_entity
+)
+
+wolf_instance_2 = InstancedEntity.objects.create(
+    x=-900.0,
+    y=530.0,
+    entity=wolf_entity
+)
+
+wolf_boss_instance = InstancedEntity.objects.create(
+    x=-1020.0,
+    y=475.0,
+    entity=wolf_boss_entity
+)
+
+shadow_mage_instance = InstancedEntity.objects.create(
+    x=-900.0,
+    y=-330,
+    entity=shadow_mage_entity
 )
 
 # Create Guilds
@@ -107,9 +134,9 @@ print("Creating Characters...")
 character1 = Character.objects.create(
     level=5,
     xp=1000,
-    hp=150,
+    hp=190,
     mp=20,
-    vitality=15,
+    vitality=19,
     strength=8,
     magic=5,
     character_class='Warrior',
@@ -127,7 +154,7 @@ character2 = Character.objects.create(
     mp=30,
     vitality=12,
     strength=6,
-    magic=8,
+    magic=11,
     character_class='Mage',
     user=game_user2,
     guild=guild2,
@@ -159,14 +186,21 @@ quest1 = Quest.objects.create(
 
 quest2 = Quest.objects.create(
     quest_id=2,
-    quest_status='in_progress'
+    quest_status='available'
 )
 
 # Create Items
 print("Creating Items...")
+
+item0 = Item.objects.create(
+    rarity='Common',
+    item_name='Wolf Pelt',
+    item_type='Trade Good'
+)
+
 item1 = Item.objects.create(
     rarity='Rare',
-    item_name='Flaming Sword',
+    item_name='Wolf-Tooth Blade',
     item_type='Weapon'
 )
 
@@ -181,16 +215,16 @@ print("Creating NPCs...")
 merchant = FriendlyNPC.objects.create(
     npc_role='Merchant',
     npc_name='Marcus the Trader',
-    npc_x_location=100,
-    npc_y_location=200,
+    npc_x_location=310.0,
+    npc_y_location=-500.0,
     instanced_entity=merchant_instance
 )
 
 guard = FriendlyNPC.objects.create(
     npc_role='Guard',
     npc_name='Captain Steel',
-    npc_x_location=150,
-    npc_y_location=250,
+    npc_x_location=-410.0,
+    npc_y_location=-30.0,
     instanced_entity=guard_instance
 )
 
@@ -198,20 +232,38 @@ guard = FriendlyNPC.objects.create(
 print("Creating Enemy NPCs...")
 enemy1 = EnemyNPC.objects.create(
     enemy_name='Dark Wolf',
-    enemy_x_location=300,
-    enemy_y_location=400,
-    enemy_health=50,
-    enemy_item=item1,
-    instanced_entity=merchant_instance
+    enemy_x_location=-1100.0,
+    enemy_y_location=530.0,
+    enemy_health=150,
+    enemy_item=item0,
+    instanced_entity=wolf_instance_1
 )
 
 enemy2 = EnemyNPC.objects.create(
+    enemy_name='Dark Wolf',
+    enemy_x_location=-900.0,
+    enemy_y_location=530.0,
+    enemy_health=150,
+    enemy_item=item0,
+    instanced_entity=wolf_instance_2
+)
+
+enemy3 = EnemyNPC.objects.create(
+    enemy_name='Dark Wolf Alpha',
+    enemy_x_location=-1020.0,
+    enemy_y_location=475.0,
+    enemy_health=500,
+    enemy_item=item1,
+    instanced_entity=wolf_boss_instance
+)
+
+enemy4 = EnemyNPC.objects.create(
     enemy_name='Shadow Mage',
-    enemy_x_location=350,
-    enemy_y_location=450,
-    enemy_health=75,
+    enemy_x_location=-900.0,
+    enemy_y_location=-330.0,
+    enemy_health=1200,
     enemy_item=item2,
-    instanced_entity=guard_instance
+    instanced_entity=shadow_mage_instance
 )
 
 print("Setup complete!")
