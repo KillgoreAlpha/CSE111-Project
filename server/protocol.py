@@ -13,7 +13,7 @@ class GameServerProtocol(WebSocketServerProtocol):
         super().__init__()
         self._packet_queue: queue.Queue[tuple['GameServerProtocol', packet.Packet]] = queue.Queue()
         self._state: callable = self.LOGIN
-        self._actor: models.Actor = None
+        self._character: models.Character = None  # Changed from _actor
         self._player_target: list = None
         self._last_delta_time_checked = None
         self._known_others: set['GameServerProtocol'] = set()
@@ -23,8 +23,8 @@ class GameServerProtocol(WebSocketServerProtocol):
         if not isinstance(p, (packet.LoginPacket, packet.RegisterPacket)):
             self.send_client(packet.DenyPacket("Invalid packet type for login state"))
             return
-        
-        if p.action == packet.Action.Register:
+
+        elif p.action == packet.Action.Register:
             username, password, avatar_id = p.payloads
 
             if not username or not password:
@@ -35,53 +35,50 @@ class GameServerProtocol(WebSocketServerProtocol):
                 self.send_client(packet.DenyPacket("This username is already taken"))
                 return
 
-            # Create Django User
-            user = models.User.objects.create_user(username=username, password=password)
-            user.save()
+            try:
+                # Create Django User
+                user = models.User.objects.create_user(username=username, password=password)
+                user.save()
 
-            # Create GameUser
-            game_user = models.GameUser(
-                user=user,
-                username=username,
-                email="",  # Add email handling if needed
-                password=password
-            )
-            game_user.save()
+                # Create GameUser
+                game_user = models.GameUser(
+                    user=user,
+                    username=username,
+                    email="",  # Add email handling if needed
+                    password=password
+                )
+                game_user.save()
 
-            # Create Entity and InstancedEntity
-            player_entity = models.Entity(name=username)
-            player_entity.save()
-            player_ientity = models.InstancedEntity(entity=player_entity, x=0, y=0)
-            player_ientity.save()
+                # Create Entity and InstancedEntity
+                player_entity = models.Entity(name=username)
+                player_entity.save()
+                player_ientity = models.InstancedEntity(entity=player_entity, x=0, y=0)
+                player_ientity.save()
 
-            # Create Actor
-            player = models.Actor(
-                instanced_entity=player_ientity, 
-                user=user, 
-                avatar_id=avatar_id
-            )
-            player.save()
+                # Create Character
+                character = models.Character(
+                    level=1,
+                    xp=0,
+                    hp=100,
+                    mp=5,
+                    vitality=10,
+                    strength=1,
+                    magic=1,
+                    character_class="Adventurer",
+                    user=game_user,
+                    character_name=username,
+                    avatar_id=avatar_id,
+                    instanced_entity=player_ientity
+                )
+                character.save()
 
-            # Create Character
-            character = models.Character(
-                level=1,
-                xp=0,
-                hp=100,
-                mp=5,
-                vitality=10,
-                strength=1,
-                magic=1,
-                character_class="Adventurer",
-                user=game_user,
-                character_name=username,
-                avatar_id=avatar_id,
-                instanced_entity=player_ientity
-            )
-            character.save()
+                # Send success packet
+                self.send_client(packet.OkPacket())
 
-            self.send_client(packet.OkPacket())
-
-            return
+            except Exception as e:
+                print(f"Registration error: {str(e)}")
+                self.send_client(packet.DenyPacket(f"Registration failed: {str(e)}"))
+                return
 
         if p.action == packet.Action.Login:
             username, password = p.payloads
@@ -107,45 +104,50 @@ class GameServerProtocol(WebSocketServerProtocol):
                 # Get the associated GameUser
                 game_user = models.GameUser.objects.get(user=user)
                 
-                # Get the character associated with this user
-                character = models.Character.objects.get(user=game_user)
+                # Get or create the character
+                try:
+                    character = models.Character.objects.get(user=game_user)
+                except models.Character.DoesNotExist:
+                    # Create initial character and required entities
+                    player_entity = models.Entity(name=username)
+                    player_entity.save()
+                    player_ientity = models.InstancedEntity(entity=player_entity, x=0, y=0)
+                    player_ientity.save()
+                    
+                    character = models.Character(
+                        user=game_user,
+                        character_name=username,
+                        level=1,
+                        xp=0,
+                        hp=100,
+                        mp=5,
+                        vitality=10,
+                        strength=1,
+                        magic=1,
+                        character_class="Adventurer",
+                        instanced_entity=player_ientity,
+                        avatar_id=0
+                    )
+                    character.save()
 
-            except models.Character.DoesNotExist:
-                # If no Actor exists, create one for the user
-                player_entity = models.Entity(name=username)
-                player_entity.save()
-                player_ientity = models.InstancedEntity(entity=player_entity, x=0, y=0)
-                player_ientity.save()
-                
+                # Store character reference for this connection
+                self._character = character
 
-                character = models.Character(
-                    user=game_user,
-                    character_name=username,
-                    level=1,
-                    xp=0,
-                    hp=100,
-                    mp=5,
-                    vitality=10,
-                    strength=1,
-                    magic=1,
-                    character_class="Adventurer",
-                    instanced_entity=player_ientity
-                )
-                character.save()
+                # Send OK packet first
+                self.send_client(packet.OkPacket())
 
-            # Send OK packet first
-            self.send_client(packet.OkPacket())
+                # Send character data to everyone
+                self.broadcast(packet.ModelDeltaPacket(models.create_dict(character)))
 
-            # Send character data
-            character_data = models.create_dict(character)
-            self.send_client(packet.ModelDeltaPacket(character_data))
+                # Add user to logged in list
+                self.factory.user_ids_logged_in.add(user.id)
 
-            # Send full actor model data
-            self.broadcast(packet.ModelDeltaPacket(models.create_dict(self._actor)))
+                # Change state to PLAY
+                self._state = self.PLAY
 
-            self.factory.user_ids_logged_in.add(user.id)
-
-            self._state = self.PLAY
+            except models.GameUser.DoesNotExist:
+                self.send_client(packet.DenyPacket("Game user not found"))
+                return
 
 
     def PLAY(self, sender: 'GameServerProtocol', p: packet.Packet):
@@ -159,7 +161,7 @@ class GameServerProtocol(WebSocketServerProtocol):
             self.send_client(p)
             if sender not in self._known_others:
                 # Send our full model data to the new player
-                sender.onPacket(self, packet.ModelDeltaPacket(models.create_dict(self._actor)))
+                sender.onPacket(self, packet.ModelDeltaPacket(models.create_dict(self._character)))
                 self._known_others.add(sender)
 
         elif p.action == packet.Action.Target:
@@ -189,7 +191,7 @@ class GameServerProtocol(WebSocketServerProtocol):
 
         elif p.action == packet.Action.CreateGuild:
             guild_name = p.payloads[0]
-            leader = models.GameUser.objects.get(user=self._actor.user)
+            leader = models.GameUser.objects.get(user=self._character.user)
 
             guild = models.Guild(guild_name=guild_name, leader=leader)
             guild.save()
@@ -246,10 +248,10 @@ class GameServerProtocol(WebSocketServerProtocol):
 
 
     def _update_position(self) -> bool:
-        "Attempt to update the actor's position and return true only if the position was changed"
+        "Attempt to update the character's position and return true only if the position was changed"
         if not self._player_target:
             return False
-        pos = [self._actor.instanced_entity.x, self._actor.instanced_entity.y]
+        pos = [self._character.instanced_entity.x, self._character.instanced_entity.y]
 
         now: float = time.time()
         delta_time: float = 1 / self.factory.tickrate
@@ -266,9 +268,9 @@ class GameServerProtocol(WebSocketServerProtocol):
 
         # Update our model if we're not already close enough to the target
         d_x, d_y = utils.direction_to(pos, self._player_target)
-        self._actor.instanced_entity.x += d_x * dist
-        self._actor.instanced_entity.y += d_y * dist
-        self._actor.instanced_entity.save()
+        self._character.instanced_entity.x += d_x * dist
+        self._character.instanced_entity.y += d_y * dist
+        self._character.instanced_entity.save()
 
         return True
 
@@ -282,10 +284,10 @@ class GameServerProtocol(WebSocketServerProtocol):
 
         # To do when there are no packets to process
         elif self._state == self.PLAY: 
-            actor_dict_before: dict = models.create_dict(self._actor)
+            character_dict_before: dict = models.create_dict(self._character)
             if self._update_position():
-                actor_dict_after: dict = models.create_dict(self._actor)
-                self.broadcast(packet.ModelDeltaPacket(models.get_delta_dict(actor_dict_before, actor_dict_after)))
+                character_dict_after: dict = models.create_dict(self._character)
+                self.broadcast(packet.ModelDeltaPacket(models.get_delta_dict(character_dict_before, character_dict_after)))
 
 
     def broadcast(self, p: packet.Packet, exclude_self: bool = False):
@@ -307,9 +309,9 @@ class GameServerProtocol(WebSocketServerProtocol):
 
     # Override
     def onClose(self, wasClean, code, reason):
-        if self._actor:
-            self._actor.save()
-            self.broadcast(packet.DisconnectPacket(self._actor.id), exclude_self=True)
+        if self._character:
+            self._character.save()
+            self.broadcast(packet.DisconnectPacket(self._character.id), exclude_self=True)
         self.factory.remove_protocol(self)
         print(f"Websocket connection closed{' unexpectedly' if not wasClean else ' cleanly'} with code {code}: {reason}")
 
