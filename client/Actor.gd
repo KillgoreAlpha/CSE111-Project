@@ -1,6 +1,6 @@
 extends "res://model.gd"
 
-@onready var Actor = get_node("$.")
+@onready var Actor = get_node("CharacterBody2D")
 @onready var body: CharacterBody2D = get_node("CharacterBody2D")
 @onready var label: Label = get_node("CharacterBody2D/Label")
 @onready var sprite: Sprite2D = get_node("CharacterBody2D/Avatar")
