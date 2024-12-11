@@ -24,8 +24,7 @@ class GameServerProtocol(WebSocketServerProtocol):
             self.send_client(packet.DenyPacket("Invalid packet type for login state"))
             return
 
-        else:
-            # p.action == packet.Action.Register
+        elif p.action == packet.Action.Register:
             username, password, avatar_id = p.payloads
 
             if not username or not password:
