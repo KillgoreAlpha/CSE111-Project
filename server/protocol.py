@@ -20,9 +20,9 @@ class GameServerProtocol(WebSocketServerProtocol):
 
 
     def LOGIN(self, sender: 'GameServerProtocol', p: packet.Packet):
-        if not isinstance(p, (packet.LoginPacket, packet.RegisterPacket)):
-            self.send_client(packet.DenyPacket("Invalid packet type for login state"))
-            return
+        # if not isinstance(p, (packet.LoginPacket, packet.RegisterPacket)):
+        #     self.send_client(packet.DenyPacket("Invalid packet type for login state"))
+        #     return
 
         if p.action == packet.Action.Login:
             username, password = p.payloads
